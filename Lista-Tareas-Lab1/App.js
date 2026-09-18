@@ -6,15 +6,24 @@ import {
   TextInput,
   Pressable,
   FlatList,
+  Alert,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Ionicons } from '@expo/vector-icons';
 
-// La "pista" gris envuelve la tarjeta y el botón: se asoma en el espacio
-// entre ambos cuando deslizas, como en el mockup.
-function TareaItem({ tarea, onEliminar }) {
+
+function TareaItem({
+  tarea,
+  onEliminar,
+  editando,
+  textoEdicion,
+  onIniciarEdicion,
+  onCambiarTextoEdicion,
+  onGuardarEdicion,
+  onCancelarEdicion,
+}) {
   return (
     <View style={styles.pista}>
       <ReanimatedSwipeable
@@ -28,10 +37,44 @@ function TareaItem({ tarea, onEliminar }) {
           </Pressable>
         )}
         overshootRight={false}
+        enabled={!editando} 
       >
-        <View style={styles.tarjetaTarea}>
-          <Text style={styles.textoTarea}>{tarea.texto}</Text>
-        </View>
+        {editando ? (
+        
+          <View style={styles.tarjetaTarea}>
+            <TextInput
+              style={styles.inputEdicion}
+              value={textoEdicion}
+              onChangeText={onCambiarTextoEdicion}
+              autoFocus
+            />
+            <View style={styles.accionesEdicion}>
+              <Pressable
+                style={styles.botonIconoGuardar}
+                onPress={onGuardarEdicion}
+              >
+                <Ionicons name="checkmark" size={18} color="white" />
+              </Pressable>
+              <Pressable
+                style={styles.botonIconoCancelar}
+                onPress={onCancelarEdicion}
+              >
+                <Ionicons name="close" size={18} color="#6B6B8D" />
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+         
+          <View style={styles.tarjetaTarea}>
+            <Text style={styles.textoTarea}>{tarea.texto}</Text>
+            <Pressable
+              onPress={() => onIniciarEdicion(tarea)}
+              hitSlop={8}
+            >
+              <Ionicons name="pencil-outline" size={18} color="#9AA0C8" />
+            </Pressable>
+          </View>
+        )}
       </ReanimatedSwipeable>
     </View>
   );
@@ -40,10 +83,16 @@ function TareaItem({ tarea, onEliminar }) {
 export default function App() {
   const [texto, setTexto] = useState('');
   const [tareas, setTareas] = useState([]);
+  const [editandoId, setEditandoId] = useState(null);
+  const [textoEdicion, setTextoEdicion] = useState('');
 
   function agregarTarea() {
     const textoLimpio = texto.trim();
-    if (textoLimpio === '') return;
+
+    if (textoLimpio === '') {
+      Alert.alert('Campo vacío', 'Escribe una tarea antes de añadirla.');
+      return;
+    }
 
     const nuevaTarea = {
       id: Date.now().toString(),
@@ -58,6 +107,33 @@ export default function App() {
     setTareas((actuales) => actuales.filter((tarea) => tarea.id !== id));
   }
 
+  function iniciarEdicion(tarea) {
+    setEditandoId(tarea.id);
+    setTextoEdicion(tarea.texto);
+  }
+
+  function guardarEdicion() {
+    const textoLimpio = textoEdicion.trim();
+
+    if (textoLimpio === '') {
+      Alert.alert('Campo vacío', 'La tarea no puede quedar en blanco.');
+      return;
+    }
+
+    setTareas((actuales) =>
+      actuales.map((tarea) =>
+        tarea.id === editandoId ? { ...tarea, texto: textoLimpio } : tarea
+      )
+    );
+    setEditandoId(null);
+    setTextoEdicion('');
+  }
+
+  function cancelarEdicion() {
+    setEditandoId(null);
+    setTextoEdicion('');
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -65,7 +141,7 @@ export default function App() {
           style={styles.contenedor}
           edges={['top', 'left', 'right', 'bottom']}
         >
-          {/* Encabezado */}
+          
           <View style={styles.encabezado}>
             <View style={styles.iconoCheck}>
               <Ionicons name="checkmark" size={20} color="white" />
@@ -73,7 +149,6 @@ export default function App() {
             <Text style={styles.tituloEncabezado}>Tareas</Text>
           </View>
 
-          {/* Tarjeta de entrada: input + botón */}
           <View style={styles.tarjetaEntrada}>
             <View style={styles.cajaInput}>
               <Ionicons name="create-outline" size={18} color="#7C7FE0" />
@@ -92,13 +167,22 @@ export default function App() {
             </Pressable>
           </View>
 
-          {/* Lista de tareas */}
+         
           <FlatList
             data={tareas}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listaContenido}
             renderItem={({ item }) => (
-              <TareaItem tarea={item} onEliminar={eliminarTarea} />
+              <TareaItem
+                tarea={item}
+                onEliminar={eliminarTarea}
+                editando={editandoId === item.id}
+                textoEdicion={textoEdicion}
+                onIniciarEdicion={iniciarEdicion}
+                onCambiarTextoEdicion={setTextoEdicion}
+                onGuardarEdicion={guardarEdicion}
+                onCancelarEdicion={cancelarEdicion}
+              />
             )}
             ListEmptyComponent={
               <Text style={styles.textoVacio}>
@@ -115,7 +199,7 @@ export default function App() {
 const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
-    backgroundColor: '#F1F0FB', 
+    backgroundColor: '#F1F0FB',
   },
   encabezado: {
     flexDirection: 'row',
@@ -184,9 +268,9 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   pista: {
-    backgroundColor: '#E4E4F5', 
+    backgroundColor: '#E4E4F5',
     borderRadius: 16,
-    padding: 4, 
+    padding: 4,
     marginBottom: 12,
   },
   tarjetaTarea: {
@@ -194,10 +278,44 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   textoTarea: {
     fontSize: 15,
     color: '#1F1F3D',
+    flex: 1,
+    marginRight: 10,
+  },
+  inputEdicion: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1F1F3D',
+    borderBottomWidth: 1,
+    borderBottomColor: '#5B5FEF',
+    paddingVertical: 2,
+    marginRight: 10,
+  },
+  accionesEdicion: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  botonIconoGuardar: {
+    backgroundColor: '#5B5FEF',
+    borderRadius: 8,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonIconoCancelar: {
+    backgroundColor: '#EDEFFC',
+    borderRadius: 8,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   botonEliminar: {
     backgroundColor: '#D3373E',
@@ -205,7 +323,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 90,
     borderRadius: 12,
-    marginLeft: 6, 
+    marginLeft: 6,
   },
   textoEliminar: {
     color: 'white',
