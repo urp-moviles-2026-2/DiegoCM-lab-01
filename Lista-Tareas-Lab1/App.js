@@ -8,13 +8,29 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Ionicons } from '@expo/vector-icons';
 
-function TareaItem({ tarea }) {
+
+function TareaItem({ tarea, onEliminar }) {
   return (
-    <View style={styles.tarjetaTarea}>
-      <Text style={styles.textoTarea}>{tarea.texto}</Text>
-    </View>
+    <ReanimatedSwipeable
+      renderRightActions={() => (
+        <Pressable
+          style={styles.botonEliminar}
+          onPress={() => onEliminar(tarea.id)}
+        >
+          <Ionicons name="trash-outline" size={20} color="white" />
+          <Text style={styles.textoEliminar}>Eliminar</Text>
+        </Pressable>
+      )}
+      overshootRight={false}
+    >
+      <View style={styles.tarjetaTarea}>
+        <Text style={styles.textoTarea}>{tarea.texto}</Text>
+      </View>
+    </ReanimatedSwipeable>
   );
 }
 
@@ -24,64 +40,71 @@ export default function App() {
 
   function agregarTarea() {
     const textoLimpio = texto.trim();
-    if (textoLimpio === '') return; // no agregar vacías ni solo espacios
+    if (textoLimpio === '') return;
 
     const nuevaTarea = {
       id: Date.now().toString(),
       texto: textoLimpio,
     };
 
-    setTareas((actuales) => [...actuales, nuevaTarea]); // sin mutar
+    setTareas((actuales) => [...actuales, nuevaTarea]);
     setTexto('');
   }
 
+  function eliminarTarea(id) {
+    setTareas((actuales) => actuales.filter((tarea) => tarea.id !== id));
+  }
+
   return (
-    <SafeAreaProvider>
-      <SafeAreaView
-        style={styles.contenedor}
-        edges={['top', 'left', 'right', 'bottom']}
-      >
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <SafeAreaView
+          style={styles.contenedor}
+          edges={['top', 'left', 'right', 'bottom']}
+        >
         
-        <View style={styles.encabezado}>
-          <View style={styles.iconoCheck}>
-            <Ionicons name="checkmark" size={20} color="white" />
-          </View>
-          <Text style={styles.tituloEncabezado}>Tareas</Text>
-        </View>
-
-      
-        <View style={styles.tarjetaEntrada}>
-          <View style={styles.cajaInput}>
-            <Ionicons name="create-outline" size={18} color="#7C7FE0" />
-            <TextInput
-              style={styles.input}
-              value={texto}
-              onChangeText={setTexto}
-              placeholder="Escribe una nueva tarea…"
-              placeholderTextColor="#9AA0C8"
-            />
+          <View style={styles.encabezado}>
+            <View style={styles.iconoCheck}>
+              <Ionicons name="checkmark" size={20} color="white" />
+            </View>
+            <Text style={styles.tituloEncabezado}>Tareas</Text>
           </View>
 
-          <Pressable style={styles.botonAgregar} onPress={agregarTarea}>
-            <Ionicons name="add" size={20} color="white" />
-            <Text style={styles.textoBotonAgregar}>Añadir tarea</Text>
-          </Pressable>
-        </View>
+          <View style={styles.tarjetaEntrada}>
+            <View style={styles.cajaInput}>
+              <Ionicons name="create-outline" size={18} color="#7C7FE0" />
+              <TextInput
+                style={styles.input}
+                value={texto}
+                onChangeText={setTexto}
+                placeholder="Escribe una nueva tarea…"
+                placeholderTextColor="#9AA0C8"
+              />
+            </View>
 
-        
-        <FlatList
-          data={tareas}
-          contentContainerStyle={styles.listaContenido}
-          renderItem={({ item }) => <TareaItem tarea={item} />}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={
-            <Text style={styles.textoVacio}>
-              No tienes tareas todavía. ¡Agrega la primera!
-            </Text>
-          }
-        />
-      </SafeAreaView>
-    </SafeAreaProvider>
+            <Pressable style={styles.botonAgregar} onPress={agregarTarea}>
+              <Ionicons name="add" size={20} color="white" />
+              <Text style={styles.textoBotonAgregar}>Añadir tarea</Text>
+            </Pressable>
+          </View>
+
+         
+          <FlatList
+            data={tareas}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listaContenido}
+            renderItem={({ item }) => (
+              <TareaItem tarea={item} onEliminar={eliminarTarea} />
+            )}
+            ListEmptyComponent={
+              <Text style={styles.textoVacio}>
+                No tienes tareas todavía. ¡Agrega la primera!
+              </Text>
+            }
+          />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -163,6 +186,21 @@ const styles = StyleSheet.create({
   textoTarea: {
     fontSize: 15,
     color: '#1F1F3D',
+  },
+  botonEliminar: {
+    backgroundColor: '#D3373E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 90,
+    borderRadius: 12,
+    marginBottom: 12,
+    marginLeft: 8,
+  },
+  textoEliminar: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
   },
   textoVacio: {
     textAlign: 'center',
