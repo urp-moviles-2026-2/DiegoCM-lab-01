@@ -12,25 +12,28 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Ionicons } from '@expo/vector-icons';
 
-
+// La "pista" gris envuelve la tarjeta y el botón: se asoma en el espacio
+// entre ambos cuando deslizas, como en el mockup.
 function TareaItem({ tarea, onEliminar }) {
   return (
-    <ReanimatedSwipeable
-      renderRightActions={() => (
-        <Pressable
-          style={styles.botonEliminar}
-          onPress={() => onEliminar(tarea.id)}
-        >
-          <Ionicons name="trash-outline" size={20} color="white" />
-          <Text style={styles.textoEliminar}>Eliminar</Text>
-        </Pressable>
-      )}
-      overshootRight={false}
-    >
-      <View style={styles.tarjetaTarea}>
-        <Text style={styles.textoTarea}>{tarea.texto}</Text>
-      </View>
-    </ReanimatedSwipeable>
+    <View style={styles.pista}>
+      <ReanimatedSwipeable
+        renderRightActions={() => (
+          <Pressable
+            style={styles.botonEliminar}
+            onPress={() => onEliminar(tarea.id)}
+          >
+            <Ionicons name="trash-outline" size={20} color="white" />
+            <Text style={styles.textoEliminar}>Eliminar</Text>
+          </Pressable>
+        )}
+        overshootRight={false}
+      >
+        <View style={styles.tarjetaTarea}>
+          <Text style={styles.textoTarea}>{tarea.texto}</Text>
+        </View>
+      </ReanimatedSwipeable>
+    </View>
   );
 }
 
@@ -62,7 +65,7 @@ export default function App() {
           style={styles.contenedor}
           edges={['top', 'left', 'right', 'bottom']}
         >
-        
+          {/* Encabezado */}
           <View style={styles.encabezado}>
             <View style={styles.iconoCheck}>
               <Ionicons name="checkmark" size={20} color="white" />
@@ -70,6 +73,7 @@ export default function App() {
             <Text style={styles.tituloEncabezado}>Tareas</Text>
           </View>
 
+          {/* Tarjeta de entrada: input + botón */}
           <View style={styles.tarjetaEntrada}>
             <View style={styles.cajaInput}>
               <Ionicons name="create-outline" size={18} color="#7C7FE0" />
@@ -88,7 +92,7 @@ export default function App() {
             </Pressable>
           </View>
 
-         
+          {/* Lista de tareas */}
           <FlatList
             data={tareas}
             keyExtractor={(item) => item.id}
@@ -111,7 +115,7 @@ export default function App() {
 const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
-    backgroundColor: '#F1F0FB',
+    backgroundColor: '#F1F0FB', 
   },
   encabezado: {
     flexDirection: 'row',
@@ -140,6 +144,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   cajaInput: {
     flexDirection: 'row',
@@ -174,14 +183,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
+  pista: {
+    backgroundColor: '#E4E4F5', 
+    borderRadius: 16,
+    padding: 4, 
+    marginBottom: 12,
+  },
   tarjetaTarea: {
     backgroundColor: 'white',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E7E7F5',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    marginBottom: 12,
   },
   textoTarea: {
     fontSize: 15,
@@ -193,8 +205,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 90,
     borderRadius: 12,
-    marginBottom: 12,
-    marginLeft: 8,
+    marginLeft: 6, 
   },
   textoEliminar: {
     color: 'white',
